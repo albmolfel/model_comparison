@@ -64,23 +64,23 @@ class CodeExecutor:
         prev_stdout, prev_stderr = sys.stdout, sys.stderr
         captured_stdout, captured_stderr = StringIO(), StringIO()
         sys.stdout, sys.stderr = captured_stdout, captured_stderr
-
+        timeout = False
         try:
             exec(code, exec_globals)
         except TimeoutError as e:
             captured_stderr.write(str(e))
-            error = "Timedout"
-            output = ""
+            timeout = True
         except Exception as e:
             traceback_str = traceback.format_exc()
             captured_stderr.write(traceback_str)
-            error = captured_stderr.getvalue().strip()
-            output = ""
         finally:
             sys.stdout, sys.stderr = prev_stdout, prev_stderr
-            signal.alarm(0)  # Disable the alarm after execution
+            signal.alarm(0)
+        
+        output = captured_stdout.getvalue().strip()
+        error = captured_stderr.getvalue().strip()
 
-        executable = (error == "" or error != "Execution timed out")
+        executable = (error == "" or timeout)
 
         return {"output": output, "error": error, "executable": executable, "code": code}
 
