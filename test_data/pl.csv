@@ -1,0 +1,17 @@
+A,B,C
+Cost of Goods Sold,Materials,100000000
+,Labor,50000000
+,Overhead,30000000
+,Total COGS,180000000
+Gross Profit,,120000000
+Operating Expenses,Salaries,20000000
+,Rent,10000000
+,Marketing,5000000
+,R&D,7000000
+,General & Admin,8000000
+,Total Operating Expenses,50000000
+Operating Income,,70000000
+Other Expenses,Interest Expense,10000000
+,Earnings Before Tax,60000000
+,Tax Expense,15000000
+Net Income,,45000000
