@@ -11,6 +11,7 @@ from rich.live import Live
 from rich.console import Console
 import pandas as pd
 import argparse
+import signal
 
 
 INTRO = """
@@ -43,6 +44,10 @@ class Experiment:
 class CodeExecutor:
     @staticmethod
     def execute(result: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Execution timed out")
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(5)  # 5 seconds timeout
         pattern = r'```(?:\w+)?\s*\n(.*?)(?=```)```'
         code = re.findall(pattern, result, re.DOTALL | re.MULTILINE)
         code = "\n".join([r for r in code]) if code else None
@@ -62,16 +67,20 @@ class CodeExecutor:
 
         try:
             exec(code, exec_globals)
+        except TimeoutError as e:
+            captured_stderr.write(str(e))
+            error = "Timedout"
+            output = ""
         except Exception as e:
             traceback_str = traceback.format_exc()
             captured_stderr.write(traceback_str)
+            error = captured_stderr.getvalue().strip()
+            output = ""
         finally:
             sys.stdout, sys.stderr = prev_stdout, prev_stderr
-        
-        output = captured_stdout.getvalue().strip()
-        error = captured_stderr.getvalue().strip()
+            signal.alarm(0)  # Disable the alarm after execution
 
-        executable = error == ""
+        executable = (error == "" or error != "Execution timed out")
 
         return {"output": output, "error": error, "executable": executable, "code": code}
 
@@ -204,6 +213,7 @@ if __name__ == "__main__":
         "mistral-nemo:12b"
         "llava:13b",
         "granite-code:8b",
+        "deepseek-coder-v2:16b"
     ]
     
     revenue_cost = pd.read_csv("test_data/revenue_cost.csv")
